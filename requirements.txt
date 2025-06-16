@@ -1,0 +1,10 @@
+opencv-python
+numpy
+pandas
+matplotlib
+tensorflow
+torch
+yolov5
+Pillow
+customtkinter
+scikit-learn

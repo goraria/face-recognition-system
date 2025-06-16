@@ -1,0 +1,6 @@
+/.idea/
+/dataset/attendance_face/
+/checkpoint/model.h5
+/dataset/face_crop/
+/dataset/train/
+/dataset/val/
