@@ -27,9 +27,17 @@ def DatabaseEmbedding(data_dir,model):
     print("✔️ Đã lưu embeddings thành công.")
 
 
+def cosine_similarity(a, b):
+    a = a.flatten()
+    b = b.flatten()
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+
 def findPerson(img):
     min_distant = 1
+    max_cosine = -1
     threshold = config.THRESHOLD
+    cosine_threshold = 0.5  # Có thể điều chỉnh, thường 0.5-0.7 cho nhận diện khuôn mặt
     identity = None
     matched_embedding = None
 
@@ -40,12 +48,15 @@ def findPerson(img):
         for row in reader:
             embedding_img = np.load(row[3])
             dist = np.linalg.norm(query_embedding - embedding_img)
-            if dist < min_distant:
+            cos_sim = cosine_similarity(query_embedding, embedding_img)
+            # Kết hợp: ưu tiên cosine similarity, nếu bằng nhau thì lấy khoảng cách nhỏ nhất
+            if (cos_sim > max_cosine) or (cos_sim == max_cosine and dist < min_distant):
+                max_cosine = cos_sim
                 min_distant = dist
                 identity = row[1]
 
-
-    if min_distant <= threshold and identity is not None:
-        return identity, min_distant
+    # Điều kiện nhận diện: cosine similarity đủ lớn và khoảng cách đủ nhỏ
+    if max_cosine >= cosine_threshold and min_distant <= threshold and identity is not None:
+        return identity, min_distant, max_cosine
     else:
-        return "unknown", min_distant
+        return "unknown", min_distant, max_cosine

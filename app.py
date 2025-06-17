@@ -1,15 +1,16 @@
 import csv
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import re
 import threading
 import time
 import customtkinter as ctk
-from tkinter import ttk, messagebox
-from tkinter import Menu
+from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
 import cv2
 import numpy as np
-import pandas as pd
+from PIL import Image, ImageTk
 from model.classification_model import FacialRecognitionModel
 from module import config, find, utils
 import tkinter as tk
@@ -288,140 +289,173 @@ def TrackImages():
     cap.release()
     cv2.destroyAllWindows()
 
-# Front End
+# === NEW: Sidebar and Main Layout ===
 window = ctk.CTk()
-window.title("Face Recognition Based Attendance System")
+window.title("Face Recognition System")
 window.geometry("1280x720")
-window.resizable(True, True)
-window.configure(background='#ffb8c6')
+window.resizable(True, True)  # Cho phép phóng to/thu nhỏ
+window.configure(bg="#f5f6fa")
 
-# Admin Window
-admin_window = ctk.CTkToplevel(window)
-admin_window.title("Đăng nhập Admin")
-admin_window.geometry("300x500")
-admin_window.withdraw()
+# === Center window on screen ===
+def center_window(win, width=1280, height=720):
+    win.update_idletasks()
+    screen_width = win.winfo_screenwidth()
+    screen_height = win.winfo_screenheight()
+    x = (screen_width // 2) - (width // 2)
+    y = (screen_height // 2) - (height // 2)
+    win.geometry(f"{width}x{height}+{x}+{y}")
 
-ctk.CTkLabel(admin_window, text="Username:", width=20, height=1, text_color="black", bg_color="white", font=('times', 17, 'bold')).pack(pady=10)
-entry_username = ctk.CTkEntry(admin_window, width=32, text_color="black", bg_color="#e1f2f2", font=('times', 15, 'bold'))
-entry_username.pack()
+center_window(window, 1280, 720)
+window.lift()
+window.focus_force()
+window.attributes('-topmost', True)
+window.after(100, lambda: window.attributes('-topmost', False))
 
-ctk.CTkLabel(admin_window, text="Password:", width=20, height=1, text_color="black", bg_color="white", font=('times', 17, 'bold')).pack(pady=10)
-entry_password = ctk.CTkEntry(admin_window, width=32, text_color="black", bg_color="#e1f2f2", font=('times', 15, 'bold'))
-entry_password.pack()
+# Sidebar
+sidebar = ctk.CTkFrame(window, width=200, fg_color="#222f3e")
+sidebar.pack(side="left", fill="y")
+ctk.CTkLabel(sidebar, text="MENU", text_color="white", font=("Arial", 20, "bold"), fg_color="#222f3e").pack(pady=30)
 
-# Create verify button without assigning command immediately
-admin_window.verify_button = ctk.CTkButton(admin_window, text="Xác nhận")
-admin_window.verify_button.pack(pady=20)
+# Camera Button
+def show_camera():
+    frame1.tkraise()
 
-# Help menubar
-menubar = tk.Menu(window)
-help_menu = tk.Menu(menubar, tearoff=0)
-help_menu.add_command(label="Change Password!")
-help_menu.add_command(label="Contact Us")
-help_menu.add_separator()
-help_menu.add_command(label="Exit")
-menubar.add_cascade(label="Help", menu=help_menu)
+def show_upload():
+    frame2.tkraise()
 
-# Add ABOUT label to menubar
-def show_about():
-    messagebox.showinfo("About", "Face Recognition Attendance System\nPowered by YOLO & VGGFace")
-menubar.add_command(label="About", command=show_about)
+btn_camera = ctk.CTkButton(sidebar, text="Camera nhận diện", command=show_camera, font=("Arial", 16), fg_color="#10ac84", text_color="white")
+btn_camera.pack(pady=20, fill="x", padx=20)
 
-# Attach menu to window
-window.config(menu=menubar)
+btn_upload = ctk.CTkButton(sidebar, text="Upload ảnh nhận diện", command=show_upload, font=("Arial", 16), fg_color="#576574", text_color="white")
+btn_upload.pack(pady=20, fill="x", padx=20)
 
-# Main window
-message3 = ctk.CTkLabel(window, text="Face Recognition Based Attendance System", text_color="white", bg_color="#355454", width=60, height=1, font=('times', 29, 'bold'))
-message3.place(x=10, y=10, relwidth=1)
+# Main content area
+main_content = ctk.CTkFrame(window, fg_color="#f5f6fa")
+main_content.pack(side="left", fill="both", expand=True)
 
-# Frames
-frame1 = ctk.CTkFrame(window, bg_color="white")
-frame1.place(relx=0.11, rely=0.15, relwidth=0.39, relheight=0.80)
+# Frame 1: Camera nhận diện
+frame1 = ctk.CTkFrame(main_content, fg_color="white")
+frame1.place(relx=0, rely=0, relwidth=1, relheight=1)
+ctk.CTkLabel(frame1, text="Camera nhận diện khuôn mặt", font=("Arial", 18, "bold"), text_color="#222f3e").pack(pady=10)
 
-frame2 = ctk.CTkFrame(window, bg_color="white")
-frame2.place(relx=0.51, rely=0.15, relwidth=0.39, relheight=0.80)
+camera_canvas = tk.Canvas(frame1, width=800, height=500, bg="#dfe6e9")
+camera_canvas.pack(pady=20)
 
-# Frame headers
-fr_head1 = ctk.CTkLabel(frame1, text="Register New Employee", text_color="white", bg_color="black", font=('times', 17, 'bold'))
-fr_head1.place(x=0, y=0, relwidth=1)
+camera_result_label = ctk.CTkLabel(frame1, text="", font=("Arial", 16), text_color="#222f3e")
+camera_result_label.pack(pady=10)
 
-fr_head2 = ctk.CTkLabel(frame2, text="Mark Employee's attendance", text_color="white", bg_color="black", font=('times', 17, 'bold'))
-fr_head2.place(x=0, y=0, relwidth=1)
+# Frame 2: Upload ảnh nhận diện
+frame2 = ctk.CTkFrame(main_content, fg_color="white")
+frame2.place(relx=0, rely=0, relwidth=1, relheight=1)
+ctk.CTkLabel(frame2, text="Nhận diện từ ảnh upload", font=("Arial", 18, "bold"), text_color="#222f3e").pack(pady=10)
 
-# Registration frame
-lbl = ctk.CTkLabel(frame1, text="Enter ID", width=20, height=1, text_color="black", bg_color="white", font=('times', 17, 'bold'))
-lbl.place(x=0, y=55)
+upload_canvas = tk.Canvas(frame2, width=800, height=500, bg="#dfe6e9")
+upload_canvas.pack(pady=20)
 
-txt = ctk.CTkEntry(frame1, width=32, text_color="black", bg_color="#e1f2f2", font=('times', 15, 'bold'))
-txt.place(x=55, y=88, relwidth=0.75)
+upload_result_label = ctk.CTkLabel(frame2, text="", font=("Arial", 16), text_color="#222f3e")
+upload_result_label.pack(pady=10)
 
-lbl2 = ctk.CTkLabel(frame1, text="Enter Name", width=20, text_color="black", bg_color="white", font=('times', 17, 'bold'))
-lbl2.place(x=0, y=140)
+# === Camera logic ===
+face_model = FacialRecognitionModel()
+embedding_model = face_model.get_embedding_model()
 
-txt2 = ctk.CTkEntry(frame1, width=32, text_color="black", bg_color="#e1f2f2", font=('times', 15, 'bold'))
-txt2.place(x=55, y=173, relwidth=0.75)
+cap = None
+camera_running = False
 
-message0 = ctk.CTkLabel(frame1, text="Follow the steps...", bg_color="white", text_color="black", width=39, height=1, font=('times', 16, 'bold'))
-message0.place(x=7, y=275)
+def start_camera():
+    global cap, camera_running
+    if cap is None:
+        cap = cv2.VideoCapture(0)
+    camera_running = True
+    update_camera()
 
-message1 = ctk.CTkLabel(frame1, text="1)Take Images  ===> 2)Save Profile", bg_color="white", text_color="black", width=39, height=1, font=('times', 15, 'bold'))
-message1.place(x=7, y=300)
+def stop_camera():
+    global cap, camera_running
+    camera_running = False
+    if cap:
+        cap.release()
+        cap = None
+    camera_canvas.delete("all")
+    camera_result_label.configure(text="")
 
-message = ctk.CTkLabel(frame1, text="", bg_color="white", text_color="black", width=39, height=1, font=('times', 16, 'bold'))
-message.place(x=7, y=500)
+def update_camera():
+    if not camera_running or cap is None:
+        return
+    ret, frame = cap.read()
+    if not ret:
+        stop_camera()
+        return
+    # Detect face
+    faces = utils.detect_face_yolo(frame)
+    name = "Unknown"
+    if faces:
+        face_img = cv2.resize(faces[0], (224, 224))
+        embedding_img = embedding_model.predict(np.expand_dims(face_img, axis=0))[0]
+        identity, dist = find.findPerson(embedding_img)
+        name = identity if dist < config.THRESHOLD else "Unknown"
+        # Draw bounding box
+        for f in faces:
+            h, w = frame.shape[:2]
+            x, y, x2, y2 = 0, 0, w, h
+            if hasattr(f, 'shape') and len(f.shape) == 3:
+                # Find where this face is in the frame
+                res = cv2.matchTemplate(frame, f, cv2.TM_CCOEFF_NORMED)
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+                x, y = max_loc
+                x2, y2 = x + f.shape[1], y + f.shape[0]
+            cv2.rectangle(frame, (x, y), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(frame, name, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+    # Show frame
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    img = Image.fromarray(rgb)
+    imgtk = ImageTk.PhotoImage(image=img)
+    camera_canvas.imgtk = imgtk
+    camera_canvas.create_image(0, 0, anchor="nw", image=imgtk)
+    camera_result_label.configure(text=f"Kết quả: {name}")
+    if camera_running:
+        camera_canvas.after(30, update_camera)
 
-# Attendance frame
-lbl3 = ctk.CTkLabel(frame2, text="Attendance Table", width=20, text_color="black", bg_color="white", height=1, font=('times', 17, 'bold'))
-lbl3.place(x=100, y=115)
+ctk.CTkButton(frame1, text="Bắt đầu Camera", command=start_camera, fg_color="#10ac84", text_color="white").pack(side="left", padx=40, pady=10)
+ctk.CTkButton(frame1, text="Dừng Camera", command=stop_camera, fg_color="#ee5253", text_color="white").pack(side="left", padx=40, pady=10)
 
-# Display total registrations
-res = 0
-if os.path.isfile(config.STUDENT_DETAILS_CSV):
-    with open(config.STUDENT_DETAILS_CSV, 'r') as csvFile1:
-        reader1 = csv.reader(csvFile1)
-        for l in reader1:
-            res = res + 1
-    res = (res // 2) - 1
-message.configure(text='Total Registrations : ' + str(res))
+# === Upload logic ===
+def upload_image():
+    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png")])
+    if not file_path:
+        return
+    img = cv2.imread(file_path)
+    if img is None:
+        upload_result_label.configure(text="Không thể đọc ảnh!")
+        return
+    faces = utils.detect_face_yolo(img)
+    name = "Unknown"
+    if faces:
+        face_img = cv2.resize(faces[0], (224, 224))
+        embedding_img = embedding_model.predict(np.expand_dims(face_img, axis=0))[0]
+        identity, dist = find.findPerson(embedding_img)
+        name = identity if dist < config.THRESHOLD else "Unknown"
+        # Draw bounding box
+        for f in faces:
+            h, w = img.shape[:2]
+            x, y, x2, y2 = 0, 0, w, h
+            if hasattr(f, 'shape') and len(f.shape) == 3:
+                res = cv2.matchTemplate(img, f, cv2.TM_CCOEFF_NORMED)
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+                x, y = max_loc
+                x2, y2 = x + f.shape[1], y + f.shape[0]
+            cv2.rectangle(img, (x, y), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(img, name, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img_pil = Image.fromarray(rgb)
+    imgtk = ImageTk.PhotoImage(image=img_pil)
+    upload_canvas.imgtk = imgtk
+    upload_canvas.create_image(0, 0, anchor="nw", image=imgtk)
+    upload_result_label.configure(text=f"Kết quả: {name}")
 
-# Buttons
-clearButton = ctk.CTkButton(frame1, text="Clear", command=clear, text_color="white", bg_color="#13059c", width=11, font=('times', 12, 'bold'))
-clearButton.place(x=55, y=230, relwidth=0.29)
+ctk.CTkButton(frame2, text="Chọn ảnh để nhận diện", command=upload_image, fg_color="#10ac84", text_color="white").pack(pady=10)
 
-takeImg = ctk.CTkButton(frame1, text="Take Images", command=TakeImages, text_color="black", bg_color="#00aeff", width=34, height=1, font=('times', 16, 'bold'), state="disabled")
-takeImg.place(x=30, y=350, relwidth=0.89)
-
-trainImg = ctk.CTkButton(frame1, text="Save Profile", text_color="black", command=SaveProfile, bg_color="#00aeff", width=34, height=1, font=('times', 16, 'bold'), state="disabled")
-trainImg.place(x=30, y=430, relwidth=0.89)
-
-trackImg = ctk.CTkButton(frame2, text="Take Attendance", command=TrackImages, text_color="black", bg_color="#00aeff", height=1, font=('times', 16, 'bold'), state="disabled")
-trackImg.place(x=30, y=60, relwidth=0.89)
-
-quitWindow = ctk.CTkButton(frame2, text="Quit", command=window.destroy, text_color="white", bg_color="#13059c", width=35, height=1, font=('times', 16, 'bold'))
-quitWindow.place(x=30, y=450, relwidth=0.89)
-
-# Attendance table
-style = ttk.Style()
-style.configure("mystyle.Treeview", highlightthickness=0, bd=0, font=('Calibri', 11))  # Modify the font of the body
-style.configure("mystyle.Treeview.Heading", font=('times', 13, 'bold'))  # Modify the font of the headings
-style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
-tb = ttk.Treeview(frame2, height=13, columns=('name', 'date', 'time'), style="mystyle.Treeview")
-tb.column('#0', width=82)
-tb.column('name', width=130)
-tb.column('date', width=133)
-tb.column('time', width=133)
-tb.grid(row=2, column=0, padx=(0, 0), pady=(150, 0), columnspan=4)
-tb.heading('#0', text='ID')
-tb.heading('name', text='NAME')
-tb.heading('date', text='DATE')
-tb.heading('time', text='TIME')
-
-# Scrollbar
-scroll = ttk.Scrollbar(frame2, orient='vertical', command=tb.yview)
-scroll.grid(row=2, column=4, padx=(0, 100), pady=(150, 0), sticky='ns')
-tb.configure(yscrollcommand=scroll.set)
-
-# Closing lines
-window.protocol("WM_DELETE_WINDOW")
-threading.Thread(target=load_models_async, daemon=True).start()
+# Show camera frame by default
+frame1.tkraise()
+window.lift()
+window.focus_force()
 window.mainloop()

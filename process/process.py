@@ -1,6 +1,8 @@
 import os
 import shutil
 import cv2
+import random
+import numpy as np
 from module import config, utils
 
 # Đường dẫn dữ liệu
@@ -40,6 +42,7 @@ def process_images():
         os.makedirs(emb_person_dir, exist_ok=True)
 
         images = [f for f in os.listdir(person_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+        random.shuffle(images)  # Shuffle để chia train/val ngẫu nhiên
         n_val = int(len(images) * VAL_RATIO)
         val_imgs = set(images[:n_val])
         for img_name in images:
@@ -65,7 +68,6 @@ def process_images():
             if embedding_model is not None:
                 embedding = embedding_model.predict(face_img.reshape(1, 224, 224, 3))[0]
                 emb_save_path = os.path.join(emb_person_dir, img_name + '.npy')
-                import numpy as np
                 np.save(emb_save_path, embedding)
 
 if __name__ == '__main__':

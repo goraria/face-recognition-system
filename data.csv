@@ -1,1 +1,2 @@
 id,name,img_path,embedding
+sửa lại giao diện upload ảnh lên hiển thị xem trước, khi bấm lưu thì reset, chỉnh các nút ở cả 3 frame có height 30 border radius 5 và màu black, sidebar sửa lại thay đổi theo giao diện, tối thì sidebar tối, sáng thì sidebar sáng nhưng màu nhạt hơn, theo diao diện của shadcn https://ui.shadcn.com/ , các nút ở giao diện tối thì màu trắng, ở giao diện sáng thì màu đen, theo thiết kế của shadcn, sửa xong hãy chạy và debug giúp tôi 

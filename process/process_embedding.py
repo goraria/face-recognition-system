@@ -1,11 +1,13 @@
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 from module import config
 
 from model.classification_model import FacialRecognitionModel
 
 CROP_DIR = os.path.join(config.BASE_DIR, 'dataset', 'face_crop')
-EMBEDDING_DIR = os.path.join(config.BASE_DIR, 'images', 'attendance_embedding')
+EMBEDDING_DIR = os.path.join(config.BASE_DIR, 'dataset', 'attendance_embedding')
 os.makedirs(EMBEDDING_DIR, exist_ok=True)
 
 embedding_model = FacialRecognitionModel().get_embedding_model()

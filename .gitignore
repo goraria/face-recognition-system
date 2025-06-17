@@ -5,3 +5,5 @@
 /dataset/train/
 /dataset/val/
 **/.DS_Store
+/checkpoint/vgg_face_weights.h5
+/dataset/attendance_embedding/

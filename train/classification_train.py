@@ -1,4 +1,6 @@
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import tensorflow as tf
 from matplotlib import pyplot as plt
 from module.config import TRAIN_DATASET, VAL_DATASET, CHECK_POINT

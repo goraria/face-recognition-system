@@ -16,7 +16,19 @@ class FacialRecognitionModel:
             return sorted([d for d in tf.io.gfile.listdir(train_dir) if tf.io.gfile.isdir(tf.io.gfile.join(train_dir, d))])
         # fallback
         return [
-            "ChauBui", "Erik", "HoaMinzy", "KhoaPub", "LamVlog", "LanAnh", "NguyenVietHoang", "PhuongLy", "SonTung", "TranMinhHieu"
+            "ChauBui", 
+            "DucPhuc",
+            "ElonMusk", 
+            "EmmanuelMacron", 
+            "Erik", 
+            "HoaMinzy",
+            "LanAnh", 
+            "NguyenVietHoang", 
+            "PhuongLy", 
+            "SonTung", 
+            "TapCanBinh",
+            "TranMinhHieu",
+            "VladimirVladimirovichPutin",
         ]
 
     def load_model(self):
